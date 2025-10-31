@@ -1,0 +1,28 @@
+source "https://rubygems.org"
+
+# Rails framework
+gem "rails", "~> 7.0"
+
+# Database
+gem "mysql2", "~> 0.5"
+
+# Web server
+gem "puma", ">= 5.0"
+
+# Performance
+gem "bootsnap", require: false
+
+# API serialization
+gem "active_model_serializers", "~> 0.10.0"
+
+# Background jobs
+gem "sidekiq"
+gem "sidekiq-scheduler"
+gem "redis"
+
+# Search
+gem "elasticsearch-model"
+gem "elasticsearch-rails"
+
+# Cross-platform compatibility
+gem "tzinfo-data", platforms: %i[ windows jruby ]
