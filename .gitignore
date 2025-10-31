@@ -3,31 +3,63 @@
 # Environment files
 .env
 .env.*
+.env.local
+.env.*.local
 
-# Rails app files
-rails-app/.bundle
+# Rails app - Security & Secrets
+rails-app/config/master.key
+rails-app/config/credentials/*.key
+rails-app/tmp/local_secret.txt
+
+# Rails app - Logs
 rails-app/log/*
+rails-app/log/*.log
+!rails-app/log/.gitkeep
+
+# Rails app - Temp files
 rails-app/tmp/*
+rails-app/tmp/cache/*
+rails-app/tmp/pids/*
+rails-app/tmp/sockets/*
+rails-app/tmp/storage/*
+!rails-app/tmp/.gitkeep
+
+# Rails app - Storage & Uploads
 rails-app/storage/*
+!rails-app/storage/.gitkeep
+rails-app/public/uploads
+
+# Rails app - Database
 rails-app/db/data
 rails-app/db/*.sql
-rails-app/config/master.key
-rails-app/public/uploads
+rails-app/db/*.sqlite3
+rails-app/db/*.sqlite3-*
+
+# Rails app - Bundler
+rails-app/.bundle
+rails-app/vendor/bundle
 
 # Redis dumps
 *.rdb
+dump.rdb
 
 # Elasticsearch data
 /elasticsearch_data
+/elasticsearch_data/*
 
 # IDE files
 .vscode
 .idea
 *.iml
 *.sublime-*
+.project
+.classpath
+.settings/
 
 # OS files
 .DS_Store
+.DS_Store?
 *~
 *.swp
 *.swo
+Thumbs.db

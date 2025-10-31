@@ -5,30 +5,60 @@
 .gitignore
 .gitattributes
 
-# Rails app - logs and temp files
+# Rails app - Logs
 rails-app/log/*
+rails-app/log/*.log
+
+# Rails app - Temp files & Cache
 rails-app/tmp/*
+rails-app/tmp/cache/*
+rails-app/tmp/pids/*
+rails-app/tmp/sockets/*
+rails-app/tmp/storage/*
+rails-app/tmp/local_secret.txt
+
+# Rails app - Storage
 rails-app/storage/*
+rails-app/public/uploads
+
+# Rails app - Database
 rails-app/db/data
 rails-app/db/*.sql
+rails-app/db/*.sqlite3
 
-# Rails app - tests
+# Rails app - Bundler
+rails-app/.bundle
+rails-app/vendor/bundle
+
+# Rails app - Tests (already removed, but for safety)
 rails-app/test/
 rails-app/spec/
 
-# Environment files
-.env
-.env.*
+# Environment files (keep for Docker, but sensitive)
+.env.local
+.env.*.local
+
+# Security files
+rails-app/config/master.key
+rails-app/config/credentials/*.key
 
 # IDE files
 .vscode
 .idea
 *.iml
 *.sublime-*
+.project
 
 # Documentation
 README.md
+README
+LICENSE
+CHANGELOG.md
 doc/
+docs/
 
 # OS files
 .DS_Store
+Thumbs.db
+*~
+*.swp
