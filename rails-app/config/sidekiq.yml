@@ -1,0 +1,15 @@
+---
+:concurrency: 5
+:queues:
+  - default
+  - mailers
+
+# Scheduler configuration
+:scheduler:
+  :schedule:
+    # Update counts every hour
+    update_counts_job:
+      cron: '0 * * * *'  # Every hour at minute 0
+      class: UpdateCountsJob
+      description: "Update chats_count and messages_count for all records"
+
