@@ -1,0 +1,33 @@
+# See https://help.github.com/articles/ignoring-files for more about ignoring files.
+
+# Environment files
+.env
+.env.*
+
+# Rails app files
+rails-app/.bundle
+rails-app/log/*
+rails-app/tmp/*
+rails-app/storage/*
+rails-app/db/data
+rails-app/db/*.sql
+rails-app/config/master.key
+rails-app/public/uploads
+
+# Redis dumps
+*.rdb
+
+# Elasticsearch data
+/elasticsearch_data
+
+# IDE files
+.vscode
+.idea
+*.iml
+*.sublime-*
+
+# OS files
+.DS_Store
+*~
+*.swp
+*.swo
