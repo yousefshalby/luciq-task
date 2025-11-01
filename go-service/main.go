@@ -49,21 +49,14 @@ type MessageResponse struct {
 }
 
 func main() {
-	// Initialize connections
 	initDB()
 	initRedis()
 	defer cleanup()
 
-	// Setup router
 	router := mux.NewRouter()
 	router.HandleFunc("/applications/{token}/chats", createChat).Methods("POST")
 	router.HandleFunc("/applications/{token}/chats/{number}/messages", createMessage).Methods("POST")
 
-	// Health check
-	router.HandleFunc("/health", func(w http.ResponseWriter, r *http.Request) {
-		w.WriteHeader(http.StatusOK)
-		json.NewEncoder(w).Encode(map[string]string{"status": "healthy"})
-	}).Methods("GET")
 
 	port := os.Getenv("PORT")
 	if port == "" {
@@ -114,7 +107,6 @@ func initRedis() {
 
 	redisClient = redis.NewClient(opt)
 
-	// Wait for Redis to be ready
 	for i := 0; i < 30; i++ {
 		if err = redisClient.Ping(ctx).Err(); err == nil {
 			log.Println("Connected to Redis")
@@ -131,7 +123,6 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
-	// Verify application exists
 	var appID int
 	err := db.QueryRow("SELECT id FROM applications WHERE token = ?", token).Scan(&appID)
 	if err == sql.ErrNoRows {
@@ -144,14 +135,12 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse request (chat doesn't have any fields, just needs valid JSON)
 	var req ChatRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid request body")
 		return
 	}
 
-	// Get next chat number from Redis
 	redisKey := fmt.Sprintf("application:%s:chat_counter", token)
 	chatNumber, err := redisClient.Incr(ctx, redisKey).Result()
 	if err != nil {
@@ -160,7 +149,6 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create chat directly in database
 	result, err := db.Exec(
 		"INSERT INTO chats (application_id, number, messages_count, created_at, updated_at) VALUES (?, ?, 0, NOW(), NOW())",
 		appID, chatNumber,
@@ -182,7 +170,6 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Chat %d created successfully for application %s", chatNumber, token)
 
-	// Return response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(ChatResponse{
@@ -202,7 +189,6 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Verify application and chat exist
 	var chatID int
 	query := `
 		SELECT c.id 
@@ -221,7 +207,6 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Parse request
 	var req MessageRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
 		respondError(w, http.StatusBadRequest, "Invalid request body")
@@ -233,7 +218,6 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Get next message number from Redis
 	redisKey := fmt.Sprintf("chat:%d:message_counter", chatID)
 	messageNumber, err := redisClient.Incr(ctx, redisKey).Result()
 	if err != nil {
@@ -242,7 +226,6 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	// Create message directly in database
 	_, err = db.Exec(
 		"INSERT INTO messages (chat_id, number, body, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())",
 		chatID, messageNumber, req.Message.Body,
@@ -255,7 +238,6 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("Message %d created successfully for chat %d", messageNumber, chatID)
 
-	// Return response
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusCreated)
 	json.NewEncoder(w).Encode(MessageResponse{
