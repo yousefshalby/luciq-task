@@ -50,8 +50,7 @@ Both services:
 ### Installation & Running
 
 1. Clone the repository
-2. 
-3. Start the entire stack:
+2. Start the entire stack:
    ```bash
    docker-compose up --build
    ```
