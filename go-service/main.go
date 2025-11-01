@@ -163,7 +163,6 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 	if err != nil {
 		log.Printf("Failed to get last insert ID: %v", err)
 	} else {
-		// Initialize message counter in Redis for this chat
 		messageRedisKey := fmt.Sprintf("chat:%d:message_counter", chatID)
 		redisClient.Set(ctx, messageRedisKey, 0, 0)
 	}
