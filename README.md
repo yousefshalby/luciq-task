@@ -53,7 +53,7 @@ Both services:
 2. 
 3. Start the entire stack:
    ```bash
-   docker-compose up
+   docker-compose up --build
    ```
 ## API Endpoints
 
