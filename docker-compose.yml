@@ -49,6 +49,28 @@ services:
       timeout: 10s
       retries: 5
 
+  go-service:
+    build:
+      context: ./go-service
+      dockerfile: Dockerfile
+    container_name: chat_app_go_service
+    environment:
+      PORT: 8080
+      MYSQL_HOST: db
+      MYSQL_PORT: 3306
+      MYSQL_USER: ${MYSQL_USER:-chat_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-chat_password}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-chat_system_development}
+      REDIS_URL: redis://redis:6379/0
+    ports:
+      - "8080:8080"
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    restart: unless-stopped
+
   web:
     build: 
       context: ./rails-app
