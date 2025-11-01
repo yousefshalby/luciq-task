@@ -13,7 +13,7 @@ class MessagesController < ApplicationController
     
     message_number = @chat.next_message_number
     
-    CreateMessageJob.perform_async(@chat.id, message_number, message_params[:body])
+    CreateMessageJob.perform_later(@chat.id, message_number, message_params[:body])
     
     render json: { 
       number: message_number, 

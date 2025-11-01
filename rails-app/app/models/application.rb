@@ -4,7 +4,7 @@ class Application < ApplicationRecord
   validates :name, presence: true
   validates :token, presence: true, uniqueness: true
 
-  before_create :generate_token
+  before_validation :generate_token, on: :create
 
   def next_chat_number
     redis_key = "application:#{token}:chat_counter"
