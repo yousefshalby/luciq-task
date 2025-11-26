@@ -2,7 +2,9 @@ package main
 
 import (
 	"context"
+	"crypto/rand"
 	"database/sql"
+	"encoding/hex"
 	"encoding/json"
 	"fmt"
 	"log"
@@ -123,6 +125,7 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 	vars := mux.Vars(r)
 	token := vars["token"]
 
+	// Verify application exists
 	var appID int
 	err := db.QueryRow("SELECT id FROM applications WHERE token = ?", token).Scan(&appID)
 	if err == sql.ErrNoRows {
@@ -141,6 +144,7 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get next chat number atomically from Redis
 	redisKey := fmt.Sprintf("application:%s:chat_counter", token)
 	chatNumber, err := redisClient.Incr(ctx, redisKey).Result()
 	if err != nil {
@@ -149,31 +153,22 @@ func createChat(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	result, err := db.Exec(
-		"INSERT INTO chats (application_id, number, messages_count, created_at, updated_at) VALUES (?, ?, 0, NOW(), NOW())",
-		appID, chatNumber,
-	)
+	// Queue chat creation job to Sidekiq for async processing
+	// This improves performance under high traffic by offloading work to background jobs
+	err = enqueueSidekiqJob("CreateChatJob", []interface{}{token, int(chatNumber)})
 	if err != nil {
-		log.Printf("Database insert error: %v", err)
+		log.Printf("Failed to enqueue job: %v", err)
 		respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	chatID, err := result.LastInsertId()
-	if err != nil {
-		log.Printf("Failed to get last insert ID: %v", err)
-	} else {
-		messageRedisKey := fmt.Sprintf("chat:%d:message_counter", chatID)
-		redisClient.Set(ctx, messageRedisKey, 0, 0)
-	}
-
-	log.Printf("Chat %d created successfully for application %s", chatNumber, token)
+	log.Printf("Chat %d queued for creation for application %s", chatNumber, token)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(ChatResponse{
 		Number: int(chatNumber),
-		Status: "Chat created successfully",
+		Status: "Chat is being processed",
 	})
 }
 
@@ -188,6 +183,7 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Verify chat exists and get its ID
 	var chatID int
 	query := `
 		SELECT c.id 
@@ -217,6 +213,7 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	// Get next message number atomically from Redis
 	redisKey := fmt.Sprintf("chat:%d:message_counter", chatID)
 	messageNumber, err := redisClient.Incr(ctx, redisKey).Result()
 	if err != nil {
@@ -225,23 +222,21 @@ func createMessage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	_, err = db.Exec(
-		"INSERT INTO messages (chat_id, number, body, created_at, updated_at) VALUES (?, ?, ?, NOW(), NOW())",
-		chatID, messageNumber, req.Message.Body,
-	)
+	// Queue message creation job to Sidekiq for async processing
+	err = enqueueSidekiqJob("CreateMessageJob", []interface{}{chatID, int(messageNumber), req.Message.Body})
 	if err != nil {
-		log.Printf("Database insert error: %v", err)
+		log.Printf("Failed to enqueue job: %v", err)
 		respondError(w, http.StatusInternalServerError, "Internal server error")
 		return
 	}
 
-	log.Printf("Message %d created successfully for chat %d", messageNumber, chatID)
+	log.Printf("Message %d queued for creation for chat %d", messageNumber, chatID)
 
 	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusCreated)
+	w.WriteHeader(http.StatusAccepted)
 	json.NewEncoder(w).Encode(MessageResponse{
 		Number: int(messageNumber),
-		Status: "Message created successfully",
+		Status: "Message is being processed",
 	})
 }
 
@@ -271,5 +266,40 @@ func cleanup() {
 	if redisClient != nil {
 		redisClient.Close()
 	}
+}
+
+// enqueueSidekiqJob pushes a job to Sidekiq's Redis queue
+// This allows Go service to leverage Rails' background job processing
+func enqueueSidekiqJob(jobClass string, args []interface{}) error {
+	// Sidekiq job format
+	job := map[string]interface{}{
+		"class": jobClass,
+		"args":  args,
+		"retry": true,
+		"queue": "default",
+		"jid":   generateJID(),
+		"created_at": time.Now().Unix(),
+		"enqueued_at": time.Now().Unix(),
+	}
+
+	jobJSON, err := json.Marshal(job)
+	if err != nil {
+		return fmt.Errorf("failed to marshal job: %w", err)
+	}
+
+	// Push to Sidekiq's queue in Redis
+	err = redisClient.LPush(ctx, "queue:default", string(jobJSON)).Err()
+	if err != nil {
+		return fmt.Errorf("failed to push job to Redis: %w", err)
+	}
+
+	return nil
+}
+
+// generateJID generates a unique job ID for Sidekiq (24 character hex string)
+func generateJID() string {
+	b := make([]byte, 12) // 12 bytes = 24 hex characters
+	rand.Read(b)
+	return hex.EncodeToString(b)
 }
 

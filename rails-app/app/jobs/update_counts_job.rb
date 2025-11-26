@@ -4,21 +4,44 @@ class UpdateCountsJob < ApplicationJob
   def perform
     Rails.logger.info "Starting count update job"
 
-    Application.find_each do |application|
-      actual_count = application.chats.count
-      if application.chats_count != actual_count
-        application.update_column(:chats_count, actual_count)
-        Rails.logger.info "Updated chats_count for application #{application.token}: #{actual_count}"
-      end
-    end
+    # Use atomic SQL UPDATE with subquery to avoid race conditions
+    # This ensures the count is calculated and updated in a single atomic operation
+    
+    # Update application chats_count
+    sql = <<-SQL
+      UPDATE applications
+      SET chats_count = (
+        SELECT COUNT(*) 
+        FROM chats 
+        WHERE chats.application_id = applications.id
+      )
+      WHERE chats_count != (
+        SELECT COUNT(*) 
+        FROM chats 
+        WHERE chats.application_id = applications.id
+      )
+    SQL
+    
+    updated_apps = ActiveRecord::Base.connection.execute(sql).affected_rows
+    Rails.logger.info "Updated chats_count for #{updated_apps} applications"
 
-    Chat.find_each do |chat|
-      actual_count = chat.messages.count
-      if chat.messages_count != actual_count
-        chat.update_column(:messages_count, actual_count)
-        Rails.logger.info "Updated messages_count for chat #{chat.id}: #{actual_count}"
-      end
-    end
+    # Update chat messages_count
+    sql = <<-SQL
+      UPDATE chats
+      SET messages_count = (
+        SELECT COUNT(*) 
+        FROM messages 
+        WHERE messages.chat_id = chats.id
+      )
+      WHERE messages_count != (
+        SELECT COUNT(*) 
+        FROM messages 
+        WHERE messages.chat_id = chats.id
+      )
+    SQL
+    
+    updated_chats = ActiveRecord::Base.connection.execute(sql).affected_rows
+    Rails.logger.info "Updated messages_count for #{updated_chats} chats"
 
     Rails.logger.info "Count update job completed"
   end

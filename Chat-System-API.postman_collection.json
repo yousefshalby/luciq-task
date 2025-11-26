@@ -1,0 +1,735 @@
+{
+	"info": {
+		"_postman_id": "chat-system-api-collection",
+		"name": "Chat System API",
+		"description": "Complete API collection for the Chat System with Applications, Chats, and Messages endpoints. Includes Elasticsearch search functionality.",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "Applications",
+			"item": [
+				{
+					"name": "Create Application",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('app_token', response.token);",
+									"    pm.test('Application created successfully', function () {",
+									"        pm.expect(response.token).to.not.be.empty;",
+									"        pm.expect(response.name).to.eql(pm.request.json().application.name);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"application\": {\n    \"name\": \"My Test Application\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/applications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications"
+							]
+						},
+						"description": "Creates a new application and returns a unique token"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Applications",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications"
+							]
+						},
+						"description": "Retrieves all applications with their chat counts"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Application by Token",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}"
+							]
+						},
+						"description": "Retrieves a specific application by its token"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Application",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"application\": {\n    \"name\": \"Updated Application Name\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}"
+							]
+						},
+						"description": "Updates an application's name"
+					},
+					"response": []
+				}
+			],
+			"description": "Application management endpoints"
+		},
+		{
+			"name": "Chats",
+			"item": [
+				{
+					"name": "Create Chat",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('chat_number', response.number);",
+									"    pm.test('Chat created successfully', function () {",
+									"        pm.expect(response.number).to.be.a('number');",
+									"        pm.expect(response.messages_count).to.eql(0);",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats"
+							]
+						},
+						"description": "Creates a new chat for the application with auto-incrementing number"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Chats",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats"
+							]
+						},
+						"description": "Retrieves all chats for a specific application"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Chat by Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}"
+							]
+						},
+						"description": "Retrieves a specific chat by its number"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Chat",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}"
+							]
+						},
+						"description": "Updates a chat (currently just returns current state)"
+					},
+					"response": []
+				}
+			],
+			"description": "Chat management endpoints for each application"
+		},
+		{
+			"name": "Messages",
+			"item": [
+				{
+					"name": "Create Message (Async)",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 202) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('message_number', response.number);",
+									"    pm.test('Message queued for processing', function () {",
+									"        pm.expect(response.number).to.be.a('number');",
+									"        pm.expect(response.status).to.include('processing');",
+									"    });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": {\n    \"body\": \"Hello! This is a test message with some searchable content about cats and dogs.\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages"
+							]
+						},
+						"description": "Creates a message asynchronously using background jobs"
+					},
+					"response": []
+				},
+				{
+					"name": "List All Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages"
+							]
+						},
+						"description": "Retrieves all messages in a specific chat"
+					},
+					"response": []
+				},
+				{
+					"name": "Get Message by Number",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages/{{message_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages",
+								"{{message_number}}"
+							]
+						},
+						"description": "Retrieves a specific message by its number"
+					},
+					"response": []
+				},
+				{
+					"name": "Update Message",
+					"request": {
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": {\n    \"body\": \"Updated message content with new searchable terms like elephants and birds.\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages/{{message_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages",
+								"{{message_number}}"
+							]
+						},
+						"description": "Updates a message and re-indexes it in Elasticsearch"
+					},
+					"response": []
+				},
+				{
+					"name": "Search Messages",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages/search?query=cats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "cats",
+									"description": "Search term to find in message bodies"
+								}
+							]
+						},
+						"description": "Searches messages using Elasticsearch for partial matches"
+					},
+					"response": []
+				}
+			],
+			"description": "Message management and search endpoints"
+		},
+		{
+			"name": "Health & Monitoring",
+			"item": [
+				{
+					"name": "Health Check",
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/up",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"up"
+							]
+						},
+						"description": "Rails health check endpoint"
+					},
+					"response": []
+				},
+				{
+					"name": "Sidekiq Web UI",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{base_url}}/sidekiq",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"sidekiq"
+							]
+						},
+						"description": "Sidekiq web interface for monitoring background jobs (open in browser)"
+					},
+					"response": []
+				}
+			],
+			"description": "System health and monitoring endpoints"
+		},
+		{
+			"name": "Test Workflow",
+			"item": [
+				{
+					"name": "1. Create Test Application",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('app_token', response.token);",
+									"    console.log('✓ Application created with token: ' + response.token);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"application\": {\n    \"name\": \"Test Workflow Application\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/applications",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create Test Chat",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 201) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('chat_number', response.number);",
+									"    console.log('✓ Chat created with number: ' + response.number);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Create Test Message",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 202) {",
+									"    const response = pm.response.json();",
+									"    pm.environment.set('message_number', response.number);",
+									"    console.log('✓ Message queued with number: ' + response.number);",
+									"    console.log('⏳ Wait 2-3 seconds before checking message...');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"message\": {\n    \"body\": \"This is a test message about cats, dogs, and other pets for search testing.\"\n  }\n}"
+						},
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Verify Message Created",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    console.log('✓ Message verified: ' + response.body);",
+									"} else if (pm.response.code === 404) {",
+									"    console.log('⏳ Message still processing, try again in a few seconds');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages/{{message_number}}",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages",
+								"{{message_number}}"
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Test Search Functionality",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"if (pm.response.code === 200) {",
+									"    const response = pm.response.json();",
+									"    console.log('✓ Search completed, found ' + response.length + ' messages');",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"url": {
+							"raw": "{{base_url}}/applications/{{app_token}}/chats/{{chat_number}}/messages/search?query=cats",
+							"host": [
+								"{{base_url}}"
+							],
+							"path": [
+								"applications",
+								"{{app_token}}",
+								"chats",
+								"{{chat_number}}",
+								"messages",
+								"search"
+							],
+							"query": [
+								{
+									"key": "query",
+									"value": "cats"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "Complete test workflow - run these in order"
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "base_url",
+			"value": "http://localhost:3000",
+			"type": "string"
+		}
+	]
+}

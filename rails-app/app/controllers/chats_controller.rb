@@ -11,24 +11,16 @@ class ChatsController < ApplicationController
 
 
   def create
+    # Get the next chat number from Redis (atomic operation)
     chat_number = @application.next_chat_number
     
-    chat = @application.chats.new(number: chat_number)
+    # Queue the chat creation in background job for better performance under high traffic
+    CreateChatJob.perform_later(@application.token, chat_number)
     
-    if chat.save
-      chat.sync_message_counter_to_redis
-      render json: chat, status: :created, serializer: ChatSerializer
-    else
-      chat_number = @application.next_chat_number
-      chat = @application.chats.new(number: chat_number)
-      
-      if chat.save
-        chat.sync_message_counter_to_redis
-        render json: chat, status: :created, serializer: ChatSerializer
-      else
-        render json: { errors: chat.errors.full_messages }, status: :unprocessable_entity
-      end
-    end
+    render json: { 
+      number: chat_number, 
+      status: "Chat is being processed" 
+    }, status: :accepted
   end
 
   def show
